@@ -1,5 +1,11 @@
 local M = {}
 
+-- random searching on internet and this looks like it's similar to what I want
+-- to do, opening a scratch buffer for editing but I'll discard it and put the
+-- contents back into the strings place
+--
+-- https://dev.to/miguelcrespo/how-to-write-a-neovim-plugin-in-lua-30p9
+
 local get_root = function(bufnr)
   local parser = vim.treesitter.get_parser(bufnr, 'javascript', {})
   local tree = parser:parse()[1]
