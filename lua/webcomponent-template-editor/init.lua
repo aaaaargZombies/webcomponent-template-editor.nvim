@@ -6,10 +6,38 @@ local M = {}
 --
 -- https://dev.to/miguelcrespo/how-to-write-a-neovim-plugin-in-lua-30p9
 
+---@param bufnr integer num of buffer to look for templates in
+---@return TSNode root node to start searching for templates from
 local get_root = function(bufnr)
   local parser = vim.treesitter.get_parser(bufnr, 'javascript', {})
   local tree = parser:parse()[1]
   return tree:root()
+end
+
+---@param filetype string filetype for the created buffer
+---@return integer the index of the buffer
+local create_buffer = function(filetype)
+  -- would be good if this saved some where like a temp dir that was discarded after use
+  local buf = vim.api.nvim_create_buf(true, false) -- second param sets scratch to false so lsp and saving works
+  vim.api.nvim_buf_set_name(buf, '*scratch*')
+  vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
+  return buf
+end
+
+--- before adding the template literal to a new buffer for editing,
+--- remove surrounding quotations
+---@param lines string[] lines from template string
+---@return string[] lines from template string without wrapping \`
+local remove_backquotes = function(lines)
+  return { 'dummy output' }
+end
+
+--- before replacing the template literal with bugger contents
+--- wrap in backticks
+---@param lines string[] lines from buffer
+---@return string[] lines to replace template string with added \`
+local replace_backquotes = function(lines)
+  return { 'dummy output' }
 end
 
 local print_templates = function()
@@ -46,12 +74,15 @@ local print_templates = function()
 
     if row1 <= cursorRow and row2 >= cursorRow then --maybe need to tighten this up a bit to include cols?
       -- how do I get the specific captures @lang and @template
-      P('LANG')
-      P(lastLang)
-      P('TEXT')
-      P(text)
+      -- P('LANG')
+      -- P(lastLang)
+      -- P('TEXT')
+      -- P(text)
       -- setting new text is realy easy just the inverse of get_text 😸
-      -- vim.api.nvim_buf_set_text(bufnr, row1, col1, row2, col2, { "`", "", "CHUTNEY", "", "", "`" })
+      -- vim.api.nvim_buf_set_text(bufnr, row1, col1, row2, col2, { '`', '', 'CHUTNEY', '', '', '`' })
+      local buf = create_buffer(lastLang)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, true, text)
+      vim.api.nvim_win_set_buf(0, buf)
     end
   end
 end
