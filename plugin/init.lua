@@ -1,4 +1,4 @@
-P('webcomponent template editor - runs at startup')
+-- P('webcomponent template editor - runs at startup')
 
 local wc = require('webcomponent-template-editor')
 
