@@ -56,11 +56,6 @@ local print_templates = function()
   end
 end
 
-local hi = function()
-  P('hello from the webcomponent plugin')
-end
-
-M.hi = hi
 M.print_templates = print_templates
 
 return M
