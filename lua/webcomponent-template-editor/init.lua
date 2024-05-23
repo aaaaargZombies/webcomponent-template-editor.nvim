@@ -43,6 +43,11 @@ local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modif
       lines[1] = '`' .. lines[1] .. '`'
       vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, lines)
     end
+    -- let the LSP formatter match the indentation that won't carry over from
+    -- the temporary buffer
+    vim.api.nvim_buf_call(work_buf, function()
+      vim.lsp.buf.format()
+    end)
   end
 end
 
