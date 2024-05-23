@@ -19,7 +19,7 @@ end
 local create_buffer = function(filetype)
   -- would be good if this saved some where like a temp dir that was discarded after use
   local buf = vim.api.nvim_create_buf(true, false) -- second param sets scratch to false so lsp and saving works
-  vim.api.nvim_buf_set_name(buf, '*scratch*')
+  vim.api.nvim_buf_set_name(buf, '*template*')
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
 end
