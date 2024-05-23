@@ -1,5 +1,6 @@
 local M = {}
 
+local TEMPLATE_NAME = '!template!'
 -- random searching on internet and this looks like it's similar to what I want
 -- to do, opening a scratch buffer for editing but I'll discard it and put the
 -- contents back into the strings place
@@ -17,11 +18,27 @@ end
 ---@param filetype string filetype for the created buffer
 ---@return integer the index of the buffer
 local create_buffer = function(filetype)
-  -- would be good if this saved some where like a temp dir that was discarded after use
-  local buf = vim.api.nvim_create_buf(true, false) -- second param sets scratch to false so lsp and saving works
-  vim.api.nvim_buf_set_name(buf, '*template*')
+  local buf = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_buf_set_name(buf, TEMPLATE_NAME)
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
+end
+
+local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
+  return function()
+    local lines = vim.api.nvim_buf_get_lines(temp_buf, 0, -1, false)
+    P(lines)
+    local success, err = os.remove(TEMPLATE_NAME)
+    if success then
+      print('File deleted successfully')
+    else
+      print('Error deleting file: ' .. err)
+    end
+    P('POOT POOT')
+    if table.getn(lines) > 1 then
+      vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
+    end
+  end
 end
 
 --- before adding the template literal to a new buffer for editing,
@@ -90,9 +107,14 @@ local print_templates = function()
       -- P(text)
       -- setting new text is realy easy just the inverse of get_text 😸
       -- vim.api.nvim_buf_set_text(bufnr, row1, col1, row2, col2, { '`', '', 'CHUTNEY', '', '', '`' })
+      TEMPLATE_NAME = TEMPLATE_NAME .. '.' .. lastLang
       local buf = create_buffer(lastLang)
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
       vim.api.nvim_win_set_buf(0, buf)
+      vim.api.nvim_create_autocmd('BufUnload', {
+        pattern = TEMPLATE_NAME,
+        callback = buffer_close_callback(bufnr, buf, row1, col1, row2, col2, replace_backquotes),
+      })
     end
   end
 end
