@@ -19,15 +19,15 @@ local create_buffer = function(filetype)
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
 end
+
 ---@param work_buf integer the buffer number we're working on with template literal strings
----@param temp_buf integer the buffer we open to get access to other lang features
 ---@param r1 integer start row position we will inject the edited template literal back into
 ---@param c1 integer start col position we will inject the edited template literal back into
 ---@param r2 integer end row position we will inject the edited template literal back into
 ---@param c2 integer end col position we will inject the edited template literal back into
 ---@param modifier function callback to santize the contents of the buffer we've just edited (add \`s in this case )
 ---@return function callback to be used when exiting the temporary buffer
-local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
+local buffer_close_callback = function(work_buf, r1, c1, r2, c2, modifier)
   return function()
     -- grab the contents of the temp buffer
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
@@ -102,7 +102,7 @@ local print_templates = function()
       vim.api.nvim_win_set_buf(0, buf)
       vim.api.nvim_create_autocmd('BufUnload', {
         pattern = (BASE_NAME .. '*'),
-        callback = buffer_close_callback(bufnr, buf, row1, col1, row2, col2, replace_backquotes),
+        callback = buffer_close_callback(bufnr, row1, col1, row2, col2, replace_backquotes),
       })
     end
   end
