@@ -29,7 +29,11 @@ end
 ---@param lines string[] lines from template string
 ---@return string[] lines from template string without wrapping \`
 local remove_backquotes = function(lines)
-  return { 'dummy output' }
+  local first = lines[1]
+  local last = lines[#lines]
+  lines[1] = first:gsub('`', '')
+  lines[#lines] = last:gsub('`', '')
+  return lines
 end
 
 --- before replacing the template literal with bugger contents
@@ -37,7 +41,11 @@ end
 ---@param lines string[] lines from buffer
 ---@return string[] lines to replace template string with added \`
 local replace_backquotes = function(lines)
-  return { 'dummy output' }
+  local first = lines[1]
+  local last = lines[#lines]
+  lines[1] = '`' .. first
+  lines[#lines] = last .. '`'
+  return lines
 end
 
 local print_templates = function()
@@ -81,12 +89,14 @@ local print_templates = function()
       -- setting new text is realy easy just the inverse of get_text 😸
       -- vim.api.nvim_buf_set_text(bufnr, row1, col1, row2, col2, { '`', '', 'CHUTNEY', '', '', '`' })
       local buf = create_buffer(lastLang)
-      vim.api.nvim_buf_set_lines(buf, 0, -1, true, text)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
       vim.api.nvim_win_set_buf(0, buf)
     end
   end
 end
 
 M.print_templates = print_templates
+M.remove_backquotes = remove_backquotes
+M.replace_backquotes = replace_backquotes
 
 return M

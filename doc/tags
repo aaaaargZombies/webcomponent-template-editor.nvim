@@ -1,9 +1,2 @@
-nvim-plugin-template-nvim-plugin-template	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template*
-nvim-plugin-template-nvim-plugin-template-ci	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-ci*
-nvim-plugin-template-nvim-plugin-template-format	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-format*
-nvim-plugin-template-nvim-plugin-template-license-mit	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-license-mit*
-nvim-plugin-template-nvim-plugin-template-more	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-more*
-nvim-plugin-template-nvim-plugin-template-test	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-test*
-nvim-plugin-template-nvim-plugin-template-usage	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-nvim-plugin-template-usage*
-nvim-plugin-template-table-of-contents	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template-table-of-contents*
-nvim-plugin-template.txt	webcomponent-template-editor.nvim.txt	/*nvim-plugin-template.txt*
+webcomponent-template-editor.nvim-table-of-contents	webcomponent-template-editor.nvim.txt	/*webcomponent-template-editor.nvim-table-of-contents*
+webcomponent-template-editor.nvim-webcomponent-template-editor.nvim-ci	webcomponent-template-editor.nvim.txt	/*webcomponent-template-editor.nvim-webcomponent-template-editor.nvim-ci*
