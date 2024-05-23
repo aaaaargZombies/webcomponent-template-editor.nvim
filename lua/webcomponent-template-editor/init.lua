@@ -29,10 +29,7 @@ end
 ---@param lines string[] lines from template string
 ---@return string[] lines from template string without wrapping \`
 local remove_backquotes = function(lines)
-  local linesCopy = {}
-  for i, v in ipairs(lines) do
-    linesCopy[i] = v
-  end
+  local linesCopy = vim.deepcopy(lines)
   local first = linesCopy[1]
   local last = linesCopy[#linesCopy]
   linesCopy[1] = first:gsub('`', '')
@@ -45,10 +42,7 @@ end
 ---@param lines string[] lines from buffer
 ---@return string[] lines to replace template string with added \`
 local replace_backquotes = function(lines)
-  local linesCopy = {}
-  for i, v in ipairs(lines) do
-    linesCopy[i] = v
-  end
+  local linesCopy = vim.deepcopy(lines)
   local first = linesCopy[1]
   local last = linesCopy[#linesCopy]
   linesCopy[1] = '`' .. first
