@@ -28,7 +28,10 @@ end
 ---@return function callback to be used when exiting the temporary buffer
 local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
   return function()
+    -- grab the contents of the temp buffer
     local lines = vim.api.nvim_buf_get_lines(temp_buf, 0, -1, false)
+    -- delete the file we created
+    -- (it will cause errors next time we run this plugin and probably end up checked into git by accident)
     local _, err = os.remove(TEMPLATE_NAME)
     if err then
       print('Error deleting file: ' .. err)
