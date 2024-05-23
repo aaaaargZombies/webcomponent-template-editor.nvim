@@ -29,11 +29,15 @@ end
 ---@param lines string[] lines from template string
 ---@return string[] lines from template string without wrapping \`
 local remove_backquotes = function(lines)
-  local first = lines[1]
-  local last = lines[#lines]
-  lines[1] = first:gsub('`', '')
-  lines[#lines] = last:gsub('`', '')
-  return lines
+  local linesCopy = {}
+  for i, v in ipairs(lines) do
+    linesCopy[i] = v
+  end
+  local first = linesCopy[1]
+  local last = linesCopy[#linesCopy]
+  linesCopy[1] = first:gsub('`', '')
+  linesCopy[#linesCopy] = last:gsub('`', '')
+  return linesCopy
 end
 
 --- before replacing the template literal with bugger contents
@@ -41,11 +45,15 @@ end
 ---@param lines string[] lines from buffer
 ---@return string[] lines to replace template string with added \`
 local replace_backquotes = function(lines)
-  local first = lines[1]
-  local last = lines[#lines]
-  lines[1] = '`' .. first
-  lines[#lines] = last .. '`'
-  return lines
+  local linesCopy = {}
+  for i, v in ipairs(lines) do
+    linesCopy[i] = v
+  end
+  local first = linesCopy[1]
+  local last = linesCopy[#linesCopy]
+  linesCopy[1] = '`' .. first
+  linesCopy[#linesCopy] = last .. '`'
+  return linesCopy
 end
 
 local print_templates = function()
