@@ -33,8 +33,12 @@ local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modif
     if err then
       print('Error deleting file: ' .. err)
     end
+    -- our modifier function assumed it's a list of lines
     if #lines > 1 then
       vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
+    else
+      lines[1] = '`' .. lines[1] .. '`'
+      vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, lines)
     end
   end
 end
