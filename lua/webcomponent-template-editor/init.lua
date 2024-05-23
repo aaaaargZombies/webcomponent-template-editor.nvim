@@ -29,7 +29,7 @@ end
 local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
   return function()
     local lines = vim.api.nvim_buf_get_lines(temp_buf, 0, -1, false)
-    local success, err = os.remove(TEMPLATE_NAME)
+    local _, err = os.remove(TEMPLATE_NAME)
     if err then
       print('Error deleting file: ' .. err)
     end
