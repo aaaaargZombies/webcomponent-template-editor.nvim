@@ -20,6 +20,14 @@ local template_contents = {
   '    ',
 }
 
+local template_literal_min = {
+  '`<h1>${this.sayHello(this.name)}!</h1>`',
+}
+
+local template_contents_min = {
+  '<h1>${this.sayHello(this.name)}!</h1>',
+}
+
 describe('unit tests for webcomponent-template-editor', function()
   it('removes backquotes from array of strings', function()
     local result = wc.remove_backquotes(template_literal)
@@ -29,5 +37,14 @@ describe('unit tests for webcomponent-template-editor', function()
   it('adds back backquotes from array of strings', function()
     local result = wc.replace_backquotes(template_contents)
     assert.are.same(template_literal, result)
+  end)
+  it('removes backquotes from array of strings', function()
+    local result = wc.remove_backquotes(template_literal_min)
+    assert.are.same(template_contents_min, result)
+  end)
+
+  it('adds back backquotes from array of strings', function()
+    local result = wc.replace_backquotes(template_contents_min)
+    assert.are.same(template_literal_min, result)
   end)
 end)

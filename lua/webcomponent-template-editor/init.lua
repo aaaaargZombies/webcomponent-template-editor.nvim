@@ -1,6 +1,7 @@
 local M = {}
 
-local TEMPLATE_NAME = '!template!'
+local BASE_NAME = '!template!'
+local template_name = ''
 
 ---@param bufnr integer num of buffer to look for templates in
 ---@return TSNode root node to start searching for templates from
@@ -14,7 +15,7 @@ end
 ---@return integer the index of the buffer
 local create_buffer = function(filetype)
   local buf = vim.api.nvim_create_buf(true, false)
-  vim.api.nvim_buf_set_name(buf, TEMPLATE_NAME)
+  vim.api.nvim_buf_set_name(buf, template_name)
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
 end
@@ -29,20 +30,14 @@ end
 local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
   return function()
     -- grab the contents of the temp buffer
-    local lines = vim.api.nvim_buf_get_lines(temp_buf, 0, -1, false)
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     -- delete the file we created
     -- (it will cause errors next time we run this plugin and probably end up checked into git by accident)
-    local _, err = os.remove(TEMPLATE_NAME)
+    local _, err = os.remove(template_name)
     if err then
       print('Error deleting file: ' .. err)
     end
-    -- our modifier function assumed it's a list of lines
-    if #lines > 1 then
-      vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
-    else
-      lines[1] = '`' .. lines[1] .. '`'
-      vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, lines)
-    end
+    vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
     -- let the LSP formatter match the indentation that won't carry over from
     -- the temporary buffer
     vim.api.nvim_buf_call(work_buf, function()
@@ -57,10 +52,12 @@ end
 ---@return string[] lines from template string without wrapping \`
 local remove_backquotes = function(lines)
   local linesCopy = vim.deepcopy(lines)
-  local first = linesCopy[1]
-  local last = linesCopy[#linesCopy]
-  linesCopy[1] = first:gsub('`', '')
-  linesCopy[#linesCopy] = last:gsub('`', '')
+  if #linesCopy > 1 then
+    linesCopy[1] = linesCopy[1]:gsub('`', '')
+    linesCopy[#linesCopy] = linesCopy[#linesCopy]:gsub('`', '')
+  else
+    linesCopy[1] = linesCopy[1]:gsub('`', '')
+  end
   return linesCopy
 end
 
@@ -70,10 +67,12 @@ end
 ---@return string[] lines to replace template string with added \`
 local replace_backquotes = function(lines)
   local linesCopy = vim.deepcopy(lines)
-  local first = linesCopy[1]
-  local last = linesCopy[#linesCopy]
-  linesCopy[1] = '`' .. first
-  linesCopy[#linesCopy] = last .. '`'
+  if #linesCopy > 1 then
+    linesCopy[1] = '`' .. linesCopy[1]
+    linesCopy[#linesCopy] = linesCopy[#linesCopy] .. '`'
+  else
+    linesCopy[1] = '`' .. linesCopy[1] .. '`'
+  end
   return linesCopy
 end
 
@@ -85,7 +84,7 @@ local print_templates = function()
 	(template_string) @template
  )]]
   )
-  local cursorRow = vim.api.nvim_win_get_cursor(0)[1]
+  local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
   local bufnr = vim.api.nvim_get_current_buf()
   local root = get_root(bufnr)
   local lastLang = ''
@@ -96,13 +95,13 @@ local print_templates = function()
     if name == 'lang' then
       lastLang = text[1]
     end
-    if row1 <= cursorRow and row2 >= cursorRow then
-      TEMPLATE_NAME = TEMPLATE_NAME .. '.' .. lastLang
+    if row1 <= cursorRow and row2 >= cursorRow and name == 'template' then
+      template_name = BASE_NAME .. '.' .. lastLang
       local buf = create_buffer(lastLang)
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
       vim.api.nvim_win_set_buf(0, buf)
       vim.api.nvim_create_autocmd('BufUnload', {
-        pattern = TEMPLATE_NAME,
+        pattern = (BASE_NAME .. '*'),
         callback = buffer_close_callback(bufnr, buf, row1, col1, row2, col2, replace_backquotes),
       })
     end
