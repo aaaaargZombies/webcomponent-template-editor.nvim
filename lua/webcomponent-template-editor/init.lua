@@ -1,11 +1,6 @@
 local M = {}
 
 local TEMPLATE_NAME = '!template!'
--- random searching on internet and this looks like it's similar to what I want
--- to do, opening a scratch buffer for editing but I'll discard it and put the
--- contents back into the strings place
---
--- https://dev.to/miguelcrespo/how-to-write-a-neovim-plugin-in-lua-30p9
 
 ---@param bufnr integer num of buffer to look for templates in
 ---@return TSNode root node to start searching for templates from
@@ -23,19 +18,22 @@ local create_buffer = function(filetype)
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
 end
-
+---@param work_buf integer the buffer number we're working on with template literal strings
+---@param temp_buf integer the buffer we open to get access to other lang features
+---@param r1 integer start row position we will inject the edited template literal back into
+---@param c1 integer start col position we will inject the edited template literal back into
+---@param r2 integer end row position we will inject the edited template literal back into
+---@param c2 integer end col position we will inject the edited template literal back into
+---@param modifier function callback to santize the contents of the buffer we've just edited (add \`s in this case )
+---@return function callback to be used when exiting the temporary buffer
 local buffer_close_callback = function(work_buf, temp_buf, r1, c1, r2, c2, modifier)
   return function()
     local lines = vim.api.nvim_buf_get_lines(temp_buf, 0, -1, false)
-    P(lines)
     local success, err = os.remove(TEMPLATE_NAME)
-    if success then
-      print('File deleted successfully')
-    else
+    if err then
       print('Error deleting file: ' .. err)
     end
-    P('POOT POOT')
-    if table.getn(lines) > 1 then
+    if #lines > 1 then
       vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
     end
   end
@@ -75,38 +73,18 @@ local print_templates = function()
 	(template_string) @template
  )]]
   )
-  local cursorTable = vim.api.nvim_win_get_cursor(0)
-  local cursorRow = cursorTable[1]
-  local cursorCol = cursorTable[2]
+  local cursorRow = vim.api.nvim_win_get_cursor(0)[1]
   local bufnr = vim.api.nvim_get_current_buf()
   local root = get_root(bufnr)
   local lastLang = ''
   for id, node, metadata in templates:iter_captures(root, bufnr, 0, -1) do
     local name = templates.captures[id] -- name of the capture in the query
-    -- -- typically useful info about the node:
-    -- local type = node:type() -- type of the captured node
-    -- local row1, col1, row2, col2 = node:range() -- range of the capture
-    -- ... use the info here ...
-
     local row1, col1, row2, col2 = node:range() -- range of the capture
     local text = vim.api.nvim_buf_get_text(bufnr, row1, col1, row2, col2, {})
     if name == 'lang' then
       lastLang = text[1]
     end
-
-    -- P("NAME")
-    -- P(name)
-    -- P("TEXT")
-    -- P(text)
-
-    if row1 <= cursorRow and row2 >= cursorRow then --maybe need to tighten this up a bit to include cols?
-      -- how do I get the specific captures @lang and @template
-      -- P('LANG')
-      -- P(lastLang)
-      -- P('TEXT')
-      -- P(text)
-      -- setting new text is realy easy just the inverse of get_text 😸
-      -- vim.api.nvim_buf_set_text(bufnr, row1, col1, row2, col2, { '`', '', 'CHUTNEY', '', '', '`' })
+    if row1 <= cursorRow and row2 >= cursorRow then
       TEMPLATE_NAME = TEMPLATE_NAME .. '.' .. lastLang
       local buf = create_buffer(lastLang)
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
