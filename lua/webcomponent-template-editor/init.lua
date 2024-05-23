@@ -2,6 +2,7 @@ local M = {}
 
 local BASE_NAME = '!template!'
 local template_name = ''
+local auto_cmd_id = nil
 
 ---@param bufnr integer num of buffer to look for templates in
 ---@return TSNode root node to start searching for templates from
@@ -100,7 +101,10 @@ local print_templates = function()
       local buf = create_buffer(lastLang)
       vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
       vim.api.nvim_win_set_buf(0, buf)
-      vim.api.nvim_create_autocmd('BufUnload', {
+      if auto_cmd_id ~= nil then
+        vim.api.nvim_del_autocmd(auto_cmd_id)
+      end
+      auto_cmd_id = vim.api.nvim_create_autocmd('BufUnload', {
         pattern = (BASE_NAME .. '*'),
         callback = buffer_close_callback(bufnr, row1, col1, row2, col2, replace_backquotes),
       })
