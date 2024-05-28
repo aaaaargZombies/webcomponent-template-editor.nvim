@@ -77,7 +77,7 @@ local replace_backquotes = function(lines)
   return linesCopy
 end
 
-local print_templates = function()
+local edit_template = function()
   local templates = vim.treesitter.query.parse(
     'javascript',
     [[(call_expression
@@ -112,7 +112,7 @@ local print_templates = function()
   end
 end
 
-M.print_templates = print_templates
+M.edit_template = edit_template
 M.remove_backquotes = remove_backquotes
 M.replace_backquotes = replace_backquotes
 
