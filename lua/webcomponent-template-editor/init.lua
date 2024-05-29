@@ -21,6 +21,7 @@ local create_buffer = function(filetype)
   vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
   return buf
 end
+
 ---@param work_buf integer the buffer number we're working on with template literal strings
 ---@param temp_buf integer the buffer we open to get access to other lang features
 ---@param r1 integer start row position we will inject the edited template literal back into
@@ -78,6 +79,10 @@ local replace_backquotes = function(lines)
   return linesCopy
 end
 
+--- runs a treesitter query on the document capturing up all the template strings and their identifier
+--- opens up a new buffer containing the string contents setting the filetype to the name of the identifier
+--- on close the temp buffer will copy it's contents back over the string in the origional buffer and delete
+--- the temporary buffer
 local edit_template = function()
   local ft = vim.bo.filetype
   local templates = vim.treesitter.query.parse(
