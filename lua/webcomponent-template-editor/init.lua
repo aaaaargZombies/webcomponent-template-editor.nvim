@@ -85,7 +85,14 @@ end
 --- the temporary buffer
 local edit_template = function()
   local ft = vim.bo.filetype
-  local templates = vim.treesitter.query.parse(
+  local template_nodes = vim.treesitter.query.parse(
+    ft,
+    [[(call_expression
+	( identifier )
+	(template_string)
+ ) @call_expression ]]
+  )
+  local lang_and_template = vim.treesitter.query.parse(
     ft,
     [[(call_expression
 	( identifier ) @lang
@@ -95,11 +102,26 @@ local edit_template = function()
   local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
   local bufnr = vim.api.nvim_get_current_buf()
   local root = get_root(bufnr, ft)
+
+  local sorted_nodes = {}
+  for _, node, _ in template_nodes:iter_captures(root, bufnr, 0, -1) do
+    local row1, _, row2, _ = node:range() -- range of the capture
+    local size = (row2 - row1)
+    table.insert(sorted_nodes, size, { node = node, size = size })
+  end
+
+  for index, value in ipairs(sorted_nodes) do
+    P({ index, value.size })
+  end
+
   local lastLang = ''
-  for id, node, metadata in templates:iter_captures(root, bufnr, 0, -1) do
-    local name = templates.captures[id] -- name of the capture in the query
+  for id, node, metadata in lang_and_template:iter_captures(root, bufnr, 0, -1) do
+    local name = lang_and_template.captures[id] -- name of the capture in the query
     local row1, col1, row2, col2 = node:range() -- range of the capture
     local text = vim.api.nvim_buf_get_text(bufnr, row1, col1, row2, col2, {})
+    local size = (row2 - row1)
+    P('template lines')
+    P(size)
     if name == 'lang' then
       lastLang = text[1]
     end
