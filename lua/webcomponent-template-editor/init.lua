@@ -5,9 +5,10 @@ local template_name = ''
 local auto_cmd_id = nil
 
 ---@param bufnr integer num of buffer to look for templates in
+---@param ft string language which treesitter should use
 ---@return TSNode root node to start searching for templates from
-local get_root = function(bufnr)
-  local parser = vim.treesitter.get_parser(bufnr, 'javascript', {})
+local get_root = function(bufnr, ft)
+  local parser = vim.treesitter.get_parser(bufnr, ft, {})
   local tree = parser:parse()[1]
   return tree:root()
 end
@@ -78,8 +79,9 @@ local replace_backquotes = function(lines)
 end
 
 local edit_template = function()
+  local ft = vim.bo.filetype
   local templates = vim.treesitter.query.parse(
-    'javascript',
+    ft,
     [[(call_expression
 	( identifier ) @lang
 	(template_string) @template
@@ -87,7 +89,7 @@ local edit_template = function()
   )
   local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
   local bufnr = vim.api.nvim_get_current_buf()
-  local root = get_root(bufnr)
+  local root = get_root(bufnr, ft)
   local lastLang = ''
   for id, node, metadata in templates:iter_captures(root, bufnr, 0, -1) do
     local name = templates.captures[id] -- name of the capture in the query
