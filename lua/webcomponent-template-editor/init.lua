@@ -85,21 +85,9 @@ end
 --- the temporary buffer
 local edit_template = function()
   local ft = vim.bo.filetype
-  local lang_nodes = vim.treesitter.query.parse(
-    ft,
-    [[(call_expression
-	( identifier ) @lang
-	(template_string)
- )]]
-  )
-
-  local template_nodes = vim.treesitter.query.parse(
-    ft,
-    [[(call_expression
-	( identifier )
-	(template_string) @template
- )]]
-  )
+  local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
+  local bufnr = vim.api.nvim_get_current_buf()
+  local root = get_root(bufnr, ft)
 
   local lang_and_template = vim.treesitter.query.parse(
     ft,
@@ -108,42 +96,57 @@ local edit_template = function()
 	(template_string) @template
  )]]
   )
-  local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
-  local bufnr = vim.api.nvim_get_current_buf()
-  local root = get_root(bufnr, ft)
 
   local sorted_nodes = {}
-  for _, node, _ in template_nodes:iter_captures(root, bufnr, 0, -1) do
-    local row1, _, row2, _ = node:range() -- range of the capture
-    local size = (row2 - row1)
-    table.insert(sorted_nodes, size, { node = node, size = size })
-  end
+  local ll = ''
 
-  for index, value in ipairs(sorted_nodes) do
-    P({ index, value.size })
-  end
-
-  local lastLang = ''
   for id, node, metadata in lang_and_template:iter_captures(root, bufnr, 0, -1) do
     local name = lang_and_template.captures[id] -- name of the capture in the query
     local row1, col1, row2, col2 = node:range() -- range of the capture
     local text = vim.api.nvim_buf_get_text(bufnr, row1, col1, row2, col2, {})
     local size = (row2 - row1)
     if name == 'lang' then
-      lastLang = text[1]
+      ll = text[1]
     end
-    if row1 <= cursorRow and row2 >= cursorRow and name == 'template' then
-      template_name = BASE_NAME .. '.' .. lastLang
-      local buf = create_buffer(lastLang)
-      vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(text))
+    if name == 'template' then
+      table.insert(sorted_nodes, {
+        lang = ll,
+        row1 = row1,
+        col1 = col1,
+        row2 = row2,
+        col2 = col2,
+        text = text,
+        size = size,
+      })
+    end
+  end
+
+  table.sort(sorted_nodes, function(a, b)
+    return a.size < b.size
+  end)
+
+  for _, template in ipairs(sorted_nodes) do
+    if template.row1 <= cursorRow and template.row2 >= cursorRow then
+      template_name = BASE_NAME .. '.' .. template.lang
+      local buf = create_buffer(template.lang)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(template.text))
       vim.api.nvim_win_set_buf(0, buf)
       if auto_cmd_id ~= nil then
         vim.api.nvim_del_autocmd(auto_cmd_id)
       end
       auto_cmd_id = vim.api.nvim_create_autocmd('BufUnload', {
         pattern = (BASE_NAME .. '*'),
-        callback = buffer_close_callback(bufnr, buf, row1, col1, row2, col2, replace_backquotes),
+        callback = buffer_close_callback(
+          bufnr,
+          buf,
+          template.row1,
+          template.col1,
+          template.row2,
+          template.col2,
+          replace_backquotes
+        ),
       })
+      break -- don't try to open other templates that surround the curser
     end
   end
 end

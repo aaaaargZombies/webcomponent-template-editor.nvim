@@ -88,6 +88,8 @@ end
 ---@param func any  takes two elements compares them, deafaults to (\a b -> a < b)
 ---@return [any] a new Array that is sorted
 M.sort = function(array, func)
+  -- Error executing Lua callback: vim/shared.lua:0: Cannot deepcopy object of type userdata
+  -- well this was a disaster
   local sorted = vim.deepcopy(array)
   if func == nil then
     table.sort(sorted)
