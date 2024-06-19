@@ -85,13 +85,22 @@ end
 --- the temporary buffer
 local edit_template = function()
   local ft = vim.bo.filetype
+  local lang_nodes = vim.treesitter.query.parse(
+    ft,
+    [[(call_expression
+	( identifier ) @lang
+	(template_string)
+ )]]
+  )
+
   local template_nodes = vim.treesitter.query.parse(
     ft,
     [[(call_expression
 	( identifier )
-	(template_string)
- ) @call_expression ]]
+	(template_string) @template
+ )]]
   )
+
   local lang_and_template = vim.treesitter.query.parse(
     ft,
     [[(call_expression
@@ -120,8 +129,6 @@ local edit_template = function()
     local row1, col1, row2, col2 = node:range() -- range of the capture
     local text = vim.api.nvim_buf_get_text(bufnr, row1, col1, row2, col2, {})
     local size = (row2 - row1)
-    P('template lines')
-    P(size)
     if name == 'lang' then
       lastLang = text[1]
     end
