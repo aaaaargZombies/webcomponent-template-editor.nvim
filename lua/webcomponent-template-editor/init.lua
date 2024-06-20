@@ -1,32 +1,8 @@
 local M = {}
-
+local utils = require('webcomponent-template-editor.utils')
 local auto_cmd_id = nil
 
-local filename = function(filetype)
-  local datetime = os.time(os.date('!*t'))
-  return 'template' .. '-' .. datetime .. '.' .. filetype
-end
-
----@param bufnr integer num of buffer to look for templates in
----@param ft string language which treesitter should use
----@return TSNode root node to start searching for templates from
-local get_root = function(bufnr, ft)
-  local parser = vim.treesitter.get_parser(bufnr, ft, {})
-  local tree = parser:parse()[1]
-  return tree:root()
-end
-
----@param filetype string filetype for the created buffer
----@return integer the index of the buffer
-local create_buffer = function(buffname, filetype)
-  local buf = vim.api.nvim_create_buf(true, false)
-  vim.api.nvim_buf_set_name(buf, buffname)
-  vim.api.nvim_set_option_value('filetype', filetype, { buf = buf })
-  return buf
-end
-
 ---@param work_buf integer the buffer number we're working on with template literal strings
----@param temp_buf integer the buffer we open to get access to other lang features
 ---@param r1 integer start row position we will inject the edited template literal back into
 ---@param c1 integer start col position we will inject the edited template literal back into
 ---@param r2 integer end row position we will inject the edited template literal back into
@@ -43,7 +19,7 @@ local buffer_close_callback = function(work_buf, r1, c1, r2, c2, modifier)
     if err then
       print('Error deleting file: ' .. err)
     end
-    vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines))
+    vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines)) -- this is the source of E315: ml_get: Invalid lnum: 1
     -- let the LSP formatter match the indentation that won't carry over from
     -- the temporary buffer
     vim.api.nvim_buf_call(work_buf, function()
@@ -52,45 +28,15 @@ local buffer_close_callback = function(work_buf, r1, c1, r2, c2, modifier)
   end
 end
 
---- before adding the template literal to a new buffer for editing,
---- remove surrounding quotations
----@param lines string[] lines from template string
----@return string[] lines from template string without wrapping \`
-local remove_backquotes = function(lines)
-  local linesCopy = vim.deepcopy(lines)
-  if #linesCopy > 1 then
-    linesCopy[1] = linesCopy[1]:gsub('`', '')
-    linesCopy[#linesCopy] = linesCopy[#linesCopy]:gsub('`', '')
-  else
-    linesCopy[1] = linesCopy[1]:gsub('`', '')
-  end
-  return linesCopy
-end
-
---- before replacing the template literal with bugger contents
---- wrap in backticks
----@param lines string[] lines from buffer
----@return string[] lines to replace template string with added \`
-local replace_backquotes = function(lines)
-  local linesCopy = vim.deepcopy(lines)
-  if #linesCopy > 1 then
-    linesCopy[1] = '`' .. linesCopy[1]
-    linesCopy[#linesCopy] = linesCopy[#linesCopy] .. '`'
-  else
-    linesCopy[1] = '`' .. linesCopy[1] .. '`'
-  end
-  return linesCopy
-end
-
 --- runs a treesitter query on the document capturing up all the template strings and their identifier
 --- opens up a new buffer containing the string contents setting the filetype to the name of the identifier
 --- on close the temp buffer will copy it's contents back over the string in the origional buffer and delete
 --- the temporary buffer
-local edit_template = function()
+M.edit_template = function()
   local ft = vim.bo.filetype
   local cursorRow = vim.api.nvim_win_get_cursor(0)[1] - 1
   local bufnr = vim.api.nvim_get_current_buf()
-  local root = get_root(bufnr, ft)
+  local root = utils.get_root(bufnr, ft)
 
   local lang_and_template = vim.treesitter.query.parse(
     ft,
@@ -100,12 +46,17 @@ local edit_template = function()
  )]]
   )
 
+  -- it's important to order smallest template to largest
+  -- without this we get order from top to bottom and any
+  -- and any template that we try to edit inside a parent
+  -- will open up the parent
+
   local sorted_nodes = {}
   local ll = ''
 
-  for id, node, metadata in lang_and_template:iter_captures(root, bufnr, 0, -1) do
-    local name = lang_and_template.captures[id] -- name of the capture in the query
-    local row1, col1, row2, col2 = node:range() -- range of the capture
+  for id, node, _ in lang_and_template:iter_captures(root, bufnr, 0, -1) do
+    local name = lang_and_template.captures[id]
+    local row1, col1, row2, col2 = node:range()
     local text = vim.api.nvim_buf_get_text(bufnr, row1, col1, row2, col2, {})
     local size = (row2 - row1)
     if name == 'lang' then
@@ -124,19 +75,15 @@ local edit_template = function()
     end
   end
 
-  -- it's important to order smallest template to largest
-  -- without this we get order from top to bottom and any
-  -- and any template that we try to edit inside a parent
-  -- will open up the parent
   table.sort(sorted_nodes, function(a, b)
     return a.size < b.size
   end)
 
   for _, template in ipairs(sorted_nodes) do
     if template.row1 <= cursorRow and template.row2 >= cursorRow then
-      local buffname = filename(template.lang)
-      local buf = create_buffer(buffname, template.lang)
-      vim.api.nvim_buf_set_lines(buf, 0, -1, true, remove_backquotes(template.text))
+      local buffname = utils.filename(template.lang)
+      local buf = utils.create_buffer(buffname, template.lang)
+      vim.api.nvim_buf_set_lines(buf, 0, -1, true, utils.remove_backquotes(template.text))
       vim.api.nvim_win_set_buf(0, buf)
       if auto_cmd_id ~= nil then
         vim.api.nvim_del_autocmd(auto_cmd_id)
@@ -150,16 +97,12 @@ local edit_template = function()
           template.col1,
           template.row2,
           template.col2,
-          replace_backquotes
+          utils.replace_backquotes
         ),
       })
-      break -- don't try to open other templates that surround the curser
+      break -- don't try to open other templates after first
     end
   end
 end
-
-M.edit_template = edit_template
-M.remove_backquotes = remove_backquotes
-M.replace_backquotes = replace_backquotes
 
 return M
