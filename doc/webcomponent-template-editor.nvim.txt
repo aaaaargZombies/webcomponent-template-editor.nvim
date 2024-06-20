@@ -1,4 +1,4 @@
-*webcomponent-template-editor.nvim.txt*For NVIM v0.8.0Last change: 2024 May 29
+*webcomponent-template-editor.nvim.txt*For NVIM v0.8.0Last change: 2024 June 20
 
 ==============================================================================
 Table of Contents        *webcomponent-template-editor.nvim-table-of-contents*
