@@ -1,4 +1,8 @@
-local wc = require('webcomponent-template-editor')
+local utils = require('webcomponent-template-editor.utils')
+P = function(v)
+  print(vim.inspect(v))
+  return v
+end
 
 local template_literal = {
   '`',
@@ -30,21 +34,21 @@ local template_contents_min = {
 
 describe('unit tests for webcomponent-template-editor', function()
   it('removes backquotes from array of strings', function()
-    local result = wc.remove_backquotes(template_literal)
+    local result = utils.remove_backquotes(template_literal)
     assert.are.same(template_contents, result)
   end)
 
   it('adds back backquotes from array of strings', function()
-    local result = wc.replace_backquotes(template_contents)
+    local result = utils.replace_backquotes(template_contents)
     assert.are.same(template_literal, result)
   end)
   it('removes backquotes from array of strings', function()
-    local result = wc.remove_backquotes(template_literal_min)
+    local result = utils.remove_backquotes(template_literal_min)
     assert.are.same(template_contents_min, result)
   end)
 
   it('adds back backquotes from array of strings', function()
-    local result = wc.replace_backquotes(template_contents_min)
+    local result = utils.replace_backquotes(template_contents_min)
     assert.are.same(template_literal_min, result)
   end)
 end)
