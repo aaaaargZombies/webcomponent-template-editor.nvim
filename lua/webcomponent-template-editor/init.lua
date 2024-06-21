@@ -12,14 +12,14 @@ local auto_cmd_id = nil
 local buffer_close_callback = function(work_buf, r1, c1, r2, c2, modifier)
   return function()
     -- grab the contents of the temp buffer
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local lines = modifier(vim.api.nvim_buf_get_lines(0, 0, -1, false))
     -- delete the file we created
     -- (it will cause errors next time we run this plugin and probably end up checked into git by accident)
     local _, err = os.remove(vim.api.nvim_buf_get_name(0))
     if err then
       print('Error deleting file: ' .. err)
     end
-    vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, modifier(lines)) -- this is the source of E315: ml_get: Invalid lnum: 1
+    vim.api.nvim_buf_set_text(work_buf, r1, c1, r2, c2, lines) -- it's the c2 for some reason (c2 - 1) is fine
     -- let the LSP formatter match the indentation that won't carry over from
     -- the temporary buffer
     vim.api.nvim_buf_call(work_buf, function()
